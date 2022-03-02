@@ -17,6 +17,8 @@ const allQuery = `SELECT * FROM videos`;
 const randQuery = `SELECT * FROM videos AS t1 JOIN 
 (SELECT video_url FROM videos ORDER BY RAND() LIMIT 5) AS t2 ON t1.video_url=t2.video_url`;
 
+app.get("/", (req, res) => res.send("heroku test"));
+
 app.get("/api/admin", (req, res) => {
   var videos = [];
   db.query(allQuery, async (err, data) => {
@@ -33,8 +35,8 @@ app.get("/api/admin", (req, res) => {
           thumbnail: `http://img.youtube.com/vi/${data[i].video_url}/0.jpg`,
           video_title: sub.title,
           channel_name: sub.channelTitle,
-          publish_date: moment(sub.publishedAt).format('YYYY-MM-DD'),
-          db_upload_date: moment(data[i].update_time).format('YYYY-MM-DD'),
+          publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
+          db_upload_date: moment(data[i].update_time).format("YYYY-MM-DD"),
         });
       }
       res.send(videos);
