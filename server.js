@@ -17,9 +17,7 @@ const allQuery = `SELECT * FROM videos`;
 const randQuery = `SELECT * FROM videos AS t1 JOIN 
 (SELECT video_url FROM videos ORDER BY RAND() LIMIT 5) AS t2 ON t1.video_url=t2.video_url`;
 
-app.get("/", (req, res) => res.send("heroku test"));
-
-app.get("/api/admin", (req, res) => {
+app.get("/", (req, res) => {
   var videos = [];
   db.query(allQuery, async (err, data) => {
     if (err) console.log(err);
