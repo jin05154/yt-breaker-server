@@ -28,7 +28,7 @@ const ytApi = "https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet";
 /* video info */
 app.get("/api/admin", (req, res) => {
   var videos = [];
-  const allQuery = "SELECT * FROM videos";
+  const allQuery = `SELECT * FROM videos`;
 
   db.query(allQuery, async (err, data) => {
     if (!err) {
@@ -84,7 +84,7 @@ app.post("/user/login", (req, res) => {
   const user_id = req.body.inputID;
   const user_pw = req.body.inputPW;
   const checkIdExists =
-    "SELECT COUNT(*) AS result FROM users WHERE user_id = ?";
+    `SELECT COUNT(*) AS result FROM users WHERE user_id = ?`;
   const checkAccount = `SELECT 
   CASE (SELECT COUNT(*) FROM users WHERE user_id = '${user_id}' AND user_pw = '${user_pw}')
       WHEN '0' THEN NULL
