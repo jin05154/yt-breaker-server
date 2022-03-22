@@ -23,20 +23,18 @@ var corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const allQuery = `SELECT * FROM videos`;
-const randQuery = `SELECT * FROM videos AS t1 JOIN 
-(SELECT video_url FROM videos ORDER BY RAND() LIMIT 5) AS t2 ON t1.video_url=t2.video_url`;
+const ytApi = "https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet";
 
 /* video info */
 app.get("/api/admin", (req, res) => {
   var videos = [];
+  const allQuery = "SELECT * FROM videos";
 
   db.query(allQuery, async (err, data) => {
-    if (err) console.log(err);
-    else {
+    if (!err) {
       for (let i = 0; i < data.length; ++i) {
         let res = await axios.get(
-          `https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=${data[i].video_url}&part=contentDetails&key=${process.env.YT_API_KEY}`
+          `${ytApi}&id=${data[i].video_url}&part=contentDetails&key=${process.env.YT_API_KEY}`
         );
         const sub = res.data.items[0].snippet;
         videos.push({
@@ -50,19 +48,21 @@ app.get("/api/admin", (req, res) => {
         });
       }
       res.send(videos);
-    }
+    } else console.log(err);
   });
 });
 
 app.get("/api/video", (req, res) => {
   var videos = [];
+  const randQuery = `SELECT * FROM videos AS t1 
+  JOIN (SELECT video_url FROM videos ORDER BY RAND() LIMIT 5) AS t2 
+  ON t1.video_url = t2.video_url`;
 
   db.query(randQuery, async (err, data) => {
-    if (err) console.log(err);
-    else {
+    if (!err) {
       for (let i = 0; i < data.length; ++i) {
         let res = await axios.get(
-          `https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=${data[i].video_url}&part=contentDetails&key=${process.env.YT_API_KEY}`
+          `${ytApi}&id=${data[i].video_url}&part=contentDetails&key=${process.env.YT_API_KEY}`
         );
         const sub = res.data.items[0].snippet;
         const dur = res.data.items[0].contentDetails.duration;
@@ -75,14 +75,43 @@ app.get("/api/video", (req, res) => {
         });
       }
       res.send(videos);
-    }
+    } else console.log(err);
   });
 });
 
 /* login */
 app.post("/user/login", (req, res) => {
-  res.send({
-    token: "test123",
+  const user_id = req.body.inputID;
+  const user_pw = req.body.inputPW;
+  const checkIdExists =
+    "SELECT COUNT(*) AS result FROM users WHERE user_id = ?";
+  const checkAccount = `SELECT 
+  CASE (SELECT COUNT(*) FROM users WHERE user_id = '${user_id}' AND user_pw = '${user_pw}')
+      WHEN '0' THEN NULL
+      ELSE (SELECT user_id FROM users WHERE user_id = '${user_id}' AND user_pw = '${user_pw}')
+  END AS accID,
+  CASE (SELECT COUNT(*) FROM users WHERE user_id = '${user_id}' AND user_pw = '${user_pw}')
+      WHEN '0' THEN NULL
+      ELSE (SELECT user_pw FROM users WHERE user_id = '${user_id}' AND user_pw = '${user_pw}')
+  END AS accPW`;
+
+  db.query(checkIdExists, user_id, (err, data) => {
+    if (!err) {
+      if (data[0].result == 1) {
+        // 비밀번호 일치 확인
+        db.query(checkAccount, (err, data) => {
+          if (!err) {
+            if (data[0].accID !== null && data[0].accPW !== null)
+              res.send({ token: "OK" });
+            else res.send({ msg: "아이디와 비밀번호를 다시 확인해주세요." });
+          }
+          else res.send(err);
+        });
+      } else {
+        // 결과값이 1보다 작다면 해당 id가 존재하지 않는다는 뜻
+        res.send({ msg: "존재하지 않는 아이디입니다." });
+      }
+    } else res.send(err);
   });
 });
 
