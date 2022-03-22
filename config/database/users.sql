@@ -1,0 +1,5 @@
+CREATE TABLE users (
+    user_id VARCHAR(30) NOT NULL PRIMARY KEY,
+    user_pw VARCHAR(30) NOT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+);
