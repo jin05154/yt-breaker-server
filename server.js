@@ -1,26 +1,36 @@
 require("dotenv").config();
+require("newrelic");
 
 const express = require("express");
-const app = express();
-const PORT = process.env.PORT || '8080';
 const cors = require("cors");
+const app = express();
+const PORT = process.env.PORT || "8080";
 const { default: axios } = require("axios");
 const mysqlConObj = require("./config/mysql");
 const db = mysqlConObj.init();
 var ytDurationFormat = require("youtube-duration-format");
 var moment = require("moment");
 
-app.use(cors());
+var whitelist = [
+  "https://yt-algorithm-breaker.netlify.app",
+  "http://localhost:3000",
+];
+var corsOptions = {
+  origin: whitelist,
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const allQuery = `SELECT * FROM videos`;
 const randQuery = `SELECT * FROM videos AS t1 JOIN 
 (SELECT video_url FROM videos ORDER BY RAND() LIMIT 5) AS t2 ON t1.video_url=t2.video_url`;
 
-app.get("/", (req, res) => res.send("heroku test"));
-
+/* video info */
 app.get("/api/admin", (req, res) => {
   var videos = [];
+
   db.query(allQuery, async (err, data) => {
     if (err) console.log(err);
     else {
@@ -45,7 +55,8 @@ app.get("/api/admin", (req, res) => {
 });
 
 app.get("/api/video", (req, res) => {
-  var channels = [];
+  var videos = [];
+
   db.query(randQuery, async (err, data) => {
     if (err) console.log(err);
     else {
@@ -55,7 +66,7 @@ app.get("/api/video", (req, res) => {
         );
         const sub = res.data.items[0].snippet;
         const dur = res.data.items[0].contentDetails.duration;
-        channels.push({
+        videos.push({
           id: i,
           url: data[i].video_url,
           video_title: sub.title,
@@ -63,8 +74,15 @@ app.get("/api/video", (req, res) => {
           playtime: ytDurationFormat(dur),
         });
       }
-      res.send(channels);
+      res.send(videos);
     }
+  });
+});
+
+/* login */
+app.post("/user/login", (req, res) => {
+  res.send({
+    token: "test123",
   });
 });
 
