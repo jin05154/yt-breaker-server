@@ -3,5 +3,6 @@
 
 # misc
 .env
+newrelic_agent.log
 
 npm-debug.log*
