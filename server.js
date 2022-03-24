@@ -72,6 +72,7 @@ app.get("/api/video", (req, res) => {
           video_title: sub.title,
           channel_name: sub.channelTitle,
           playtime: ytDurationFormat(dur),
+          publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
         });
       }
       res.send(videos);
