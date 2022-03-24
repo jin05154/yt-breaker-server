@@ -23,7 +23,16 @@ var corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const ytApi = "https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet";
+async function getVideoInfo(url, key) {
+  return axios.get(
+    `https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=${url}&part=contentDetails&key=${key}`
+  );
+}
+async function getChannelInfo(id, key) {
+  return axios.get(
+    `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${id}&part=contentDetails&key=${key}`
+  );
+}
 
 /* video info */
 app.get("/api/admin", (req, res) => {
@@ -33,14 +42,12 @@ app.get("/api/admin", (req, res) => {
   db.query(allQuery, async (err, data) => {
     if (!err) {
       for (let i = 0; i < data.length; ++i) {
-        let res = await axios.get(
-          `${ytApi}&id=${data[i].video_url}&part=contentDetails&key=${process.env.YT_API_KEY}`
-        );
+        let res = await getVideoInfo(data[i].video_url, process.env.YT_API_KEY);
         const sub = res.data.items[0].snippet;
         videos.push({
           id: i,
           url: `https://youtu.be/${data[i].video_url}`,
-          thumbnail: `http://img.youtube.com/vi/${data[i].video_url}/0.jpg`,
+          thumbnail: `http://img.youtube.com/vi/${data[i].video_url}/default.jpg`,
           video_title: sub.title,
           channel_name: sub.channelTitle,
           publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
@@ -61,16 +68,16 @@ app.get("/api/video", (req, res) => {
   db.query(randQuery, async (err, data) => {
     if (!err) {
       for (let i = 0; i < data.length; ++i) {
-        let res = await axios.get(
-          `${ytApi}&id=${data[i].video_url}&part=contentDetails&key=${process.env.YT_API_KEY}`
-        );
-        const sub = res.data.items[0].snippet;
-        const dur = res.data.items[0].contentDetails.duration;
+        let video = await getVideoInfo(data[i].video_url, process.env.YT_API_KEY);
+        const sub = video.data.items[0].snippet;
+        const dur = video.data.items[0].contentDetails.duration;
+        let channel = await getChannelInfo(sub.channelId, process.env.YT_API_KEY);
         videos.push({
           id: i,
           url: data[i].video_url,
           video_title: sub.title,
           channel_name: sub.channelTitle,
+          channel_art: channel.data.items[0].snippet.thumbnails.default.url,
           playtime: ytDurationFormat(dur),
           publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
         });
