@@ -25,7 +25,7 @@ app.use(express.json());
 
 async function getVideoInfo(url, key) {
   return axios.get(
-    `https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=${url}&part=contentDetails&key=${key}`
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${url}&part=contentDetails,statistics&key=${key}`
   );
 }
 async function getChannelInfo(id, key) {
@@ -70,6 +70,7 @@ app.get("/api/video", (req, res) => {
       for (let i = 0; i < data.length; ++i) {
         let video = await getVideoInfo(data[i].video_url, process.env.YT_API_KEY);
         const sub = video.data.items[0].snippet;
+        const stat = video.data.items[0].statistics;
         const dur = video.data.items[0].contentDetails.duration;
         let channel = await getChannelInfo(sub.channelId, process.env.YT_API_KEY);
         videos.push({
@@ -79,6 +80,7 @@ app.get("/api/video", (req, res) => {
           channel_name: sub.channelTitle,
           channel_art: channel.data.items[0].snippet.thumbnails.default.url,
           playtime: ytDurationFormat(dur),
+          view_count: shortenCount(stat.viewCount),
           publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
         });
       }
@@ -86,6 +88,37 @@ app.get("/api/video", (req, res) => {
     } else console.log(err);
   });
 });
+
+function shortenCount(view_count) {
+  let nums = view_count;
+  // 1천회~9.9만회
+  if (view_count >= 1000 && view_count < 100000) {
+    nums = view_count.slice(0, 2);
+    if (nums[1] == 0) return `${nums[0]}천`;
+    else return `${nums[0]}.${nums[1]}천`;
+  }
+  // 10만회~99만회
+  else if (view_count >= 100000 && view_count < 1000000) {
+    nums = view_count.slice(0, 2);
+    return `${nums[0]}${nums[1]}만`;
+  }
+  // 100만회~999만회
+  else if (view_count >= 1000000 && view_count < 10000000) {
+    nums = view_count.slice(0, 3);
+    return `${nums[0]}${nums[1]}${nums[2]}만`;
+  }
+  // 1000만회~9999만회
+  else if (view_count >= 10000000 && view_count < 100000000) {
+    nums = view_count.slice(0, 4);
+    return `${nums[0]}${nums[1]}${nums[2]}${nums[3]}만`;
+  }
+  // 1억회~9.9억회
+  else if (view_count >= 100000000 && view_count < 1000000000) {
+    nums = view_count.slice(0, 2);
+    if (nums[1] == 0) return `${nums[0]}억`;
+    else return `${nums[0]}.${nums[1]}억`;
+  }
+}
 
 /* login */
 app.post("/user/login", (req, res) => {
