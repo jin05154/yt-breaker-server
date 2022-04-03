@@ -70,7 +70,6 @@ app.get("/api/video", (req, res) => {
       for (let i = 0; i < data.length; ++i) {
         let video = await getVideoInfo(data[i].video_url, process.env.YT_API_KEY);
         const sub = video.data.items[0].snippet;
-        const stat = video.data.items[0].statistics;
         const dur = video.data.items[0].contentDetails.duration;
         let channel = await getChannelInfo(sub.channelId, process.env.YT_API_KEY);
         videos.push({
@@ -80,7 +79,7 @@ app.get("/api/video", (req, res) => {
           channel_name: sub.channelTitle,
           channel_art: channel.data.items[0].snippet.thumbnails.default.url,
           playtime: ytDurationFormat(dur),
-          view_count: shortenCount(stat.viewCount),
+          view_count: shortenCount(video.data.items[0].statistics.viewCount),
           publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
         });
       }
@@ -124,8 +123,7 @@ function shortenCount(view_count) {
 app.post("/user/login", (req, res) => {
   const user_id = req.body.inputID;
   const user_pw = req.body.inputPW;
-  const checkIdExists =
-    `SELECT COUNT(*) AS result FROM users WHERE user_id = ?`;
+  const checkIdExists = `SELECT COUNT(*) AS result FROM users WHERE user_id = ?`;
   const checkAccount = `SELECT 
   CASE (SELECT COUNT(*) FROM users WHERE user_id = '${user_id}' AND user_pw = '${user_pw}')
       WHEN '0' THEN NULL
@@ -145,8 +143,7 @@ app.post("/user/login", (req, res) => {
             if (data[0].accID !== null && data[0].accPW !== null)
               res.send({ token: "OK" });
             else res.send({ msg: "아이디와 비밀번호를 다시 확인해주세요." });
-          }
-          else res.send(err);
+          } else res.send(err);
         });
       } else {
         // 결과값이 1보다 작다면 해당 id가 존재하지 않는다는 뜻
