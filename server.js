@@ -90,11 +90,17 @@ app.get("/api/video", (req, res) => {
 
 function shortenCount(view_count) {
   let nums = view_count;
-  // 1천회~9.9만회
-  if (view_count >= 1000 && view_count < 100000) {
+  // 1천회~9.9천회
+  if (view_count >= 1000 && view_count < 10000) {
     nums = view_count.slice(0, 2);
     if (nums[1] == 0) return `${nums[0]}천`;
     else return `${nums[0]}.${nums[1]}천`;
+  }
+  // 1만회~9.9만회
+  else if (view_count >= 10000 && view_count < 100000) {
+    nums = view_count.slice(0, 2);
+    if (nums[1] == 0) return `${nums[0]}만`;
+    else return `${nums[0]}.${nums[1]}만`;
   }
   // 10만회~99만회
   else if (view_count >= 100000 && view_count < 1000000) {
