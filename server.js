@@ -50,6 +50,10 @@ app.get("/api/admin", (req, res) => {
           thumbnail: `http://img.youtube.com/vi/${data[i].video_url}/default.jpg`,
           video_title: sub.title,
           channel_name: sub.channelTitle,
+          first_category: data[i].first_category,
+          second_category: data[i].second_category,
+          age: data[i].age,
+          sex: data[i].sex,
           publish_date: moment(sub.publishedAt).format("YYYY-MM-DD"),
           db_upload_date: moment(data[i].update_time).format("YYYY-MM-DD"),
         });
